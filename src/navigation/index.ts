@@ -1,0 +1,3 @@
+// src/navigation/index.ts
+export { RootNavigator } from './RootNavigator';
+export type { RootStackParamList } from './types';
