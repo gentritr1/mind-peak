@@ -4,6 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { SartScreen } from '@/games/sart/screens/SartScreen';
+import { FlashCueScreen, FlashCueNoFlashScreen } from '@/games/flashcue/screens/FlashCueScreen';
+import { BreathScreen } from '@/games/breath/screens/BreathScreen';
 import { RootStackParamList } from './types';
 import { navigationTheme } from './theme';
 
@@ -29,6 +31,12 @@ export const RootNavigator: React.FC = () => {
                             onSelectGame={(game) => {
                                 if (game === 'sart') {
                                     navigation.navigate('Sart');
+                                } else if (game === 'flashcue') {
+                                    navigation.navigate('FlashCue');
+                                } else if (game === 'flashcue_noflash') {
+                                    navigation.navigate('FlashCueNoFlash');
+                                } else if (game === 'breath') {
+                                    navigation.navigate('Breath');
                                 }
                                 // Add future games here
                             }}
@@ -39,6 +47,24 @@ export const RootNavigator: React.FC = () => {
                 <Stack.Screen name="Sart">
                     {({ navigation }) => (
                         <SartScreen onBack={() => navigation.goBack()} />
+                    )}
+                </Stack.Screen>
+
+                <Stack.Screen name="FlashCue">
+                    {({ navigation }) => (
+                        <FlashCueScreen onBack={() => navigation.goBack()} />
+                    )}
+                </Stack.Screen>
+
+                <Stack.Screen name="FlashCueNoFlash">
+                    {({ navigation }) => (
+                        <FlashCueNoFlashScreen onBack={() => navigation.goBack()} />
+                    )}
+                </Stack.Screen>
+
+                <Stack.Screen name="Breath">
+                    {({ navigation }) => (
+                        <BreathScreen onBack={() => navigation.goBack()} />
                     )}
                 </Stack.Screen>
 

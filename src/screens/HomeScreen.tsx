@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
-import { Brain, Info, Target, Zap, ChevronRight } from 'lucide-react-native';
+import { Brain, Info, Target, Zap, ChevronRight, Wind } from 'lucide-react-native';
 import { scale, verticalScale, moderateScale } from '../utils/responsive';
 
 const THEME = {
@@ -63,6 +63,27 @@ export const HomeScreen = ({ onSelectGame }: { onSelectGame: (game: string) => v
                         icon={<Brain size={24} color={THEME.accent} />}
                         color={THEME.accent}
                         onPress={() => onSelectGame('sart')}
+                    />
+                    <GameOption
+                        title="Flash Cue Task"
+                        subtitle="Covert Spatial Attention"
+                        icon={<Target size={24} color="#8b5cf6" />}
+                        color="#8b5cf6"
+                        onPress={() => onSelectGame('flashcue')}
+                    />
+                    <GameOption
+                        title="X Detection Task"
+                        subtitle="Baseline without Flash Cue"
+                        icon={<Target size={24} color="#22c55e" />}
+                        color="#22c55e"
+                        onPress={() => onSelectGame('flashcue_noflash')}
+                    />
+                    <GameOption
+                        title="4–6 Breath"
+                        subtitle="Guided breathing timer"
+                        icon={<Wind size={24} color="#22c55e" />}
+                        color="#22c55e"
+                        onPress={() => onSelectGame('breath')}
                     />
                 </View>
 
