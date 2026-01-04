@@ -73,11 +73,26 @@ php artisan serve --host=0.0.0.0 --port=8000
   - The app can be fully used as a guest; creating an account is optional.
   - The Home screen's "Account" card lets you sign in / register or sign out back to guest mode.
 
+- **Auth screen**
+  - Single `AuthScreen` with three tabs: **Log in**, **Register**, and **Reset** (forgot‑password flow).
+  - Active tab title is reflected in the header (e.g. **Create your account**, **Forgot password**).
+  - Tabs use a pill control with an animated accent highlight that slides between tabs for clear state feedback.
+  - Password fields include an inline **eye / eye‑off** icon to toggle visibility, centered inside the input for a clean look.
+
 - **Client‑side validation before API calls**
   - **Email**: basic format check (must look like `name@example.com`) is performed before hitting `register`, `login`, or `forgot-password`.
   - **Register password**: must be **at least 12 characters** before the app will send a request.
   - **Confirm password**: must match the password field or the request will not be sent.
   - These checks avoid obviously invalid requests and mirror the Laravel validation rules; the backend remains the source of truth and may still return `422` for deeper validation.
+
+## 🎨 Theme & Colors
+
+- **Centralized palette**
+  - All core colors live in `src/theme/colors.ts` as a `COLORS` object (background, surfaces, accent, text, muted text, danger/success, banner backgrounds).
+  - `navigationTheme`, `HomeScreen`, and `AuthScreen` all consume `COLORS`, so updating the palette in one place updates the whole app.
+- **Consistency**
+  - Error/success banners, tab background, and account cards share the same surface and border colors for a cohesive dark theme.
+  - When tweaking the visual style, prefer changing `COLORS` rather than hard‑coding hex values in components.
 
 ---
 *Note: This app is intended for training and educational purposes, inspired by the neuropsychological research presented in Peak Mind.*
