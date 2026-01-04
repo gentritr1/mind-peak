@@ -5,11 +5,12 @@
  */
 export type RootStackParamList = {
     Home: undefined;
+    Auth: undefined;
     Sart: undefined;
     FlashCue: undefined;
     FlashCueNoFlash: undefined;
     Breath: undefined;
-     Meditation: undefined;
+    Meditation: undefined;
     // Add future game screens here:
     // Stroop: undefined;
     // Flanker: undefined;

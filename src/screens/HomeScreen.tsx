@@ -2,16 +2,9 @@ import * as React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { Brain, Info, Target, Zap, ChevronRight, Wind, Sparkles } from 'lucide-react-native';
 import { scale, verticalScale, moderateScale } from '../utils/responsive';
+import { COLORS } from '@/theme/colors';
 
-const THEME = {
-    bg: '#020617',
-    surface: '#0f172a',
-    surfaceLight: '#1e293b',
-    accent: '#0ea5e9',
-    text: '#f8fafc',
-    textMuted: '#94a3b8',
-    textDim: '#64748b',
-};
+const THEME = COLORS;
 
 interface GameOptionProps {
     title: string;
@@ -46,13 +39,40 @@ const GameOption: React.FC<GameOptionProps> = ({ title, subtitle, icon, color, o
     </TouchableOpacity>
 );
 
-export const HomeScreen = ({ onSelectGame }: { onSelectGame: (game: string) => void }) => {
+interface HomeScreenProps {
+    onSelectGame: (game: string) => void;
+    isLoggedIn: boolean;
+    userEmail?: string | null;
+    onPressAccount: () => void;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectGame, isLoggedIn, userEmail, onPressAccount }) => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.header}>
                     <Text style={styles.greeting}>Train Your</Text>
                     <Text style={styles.appName}>Peak Mind</Text>
+                </View>
+
+                <View style={[styles.section, styles.accountSection]}>
+                    <View style={styles.accountCard}>
+                        <Text style={styles.sectionTitle}>Account</Text>
+                        <Text style={styles.accountText}>
+                            {isLoggedIn
+                                ? `Signed in as ${userEmail ?? 'your account'}.`
+                                : 'You can use Peak Mind fully as a guest, or create an account to sync your training history.'}
+                        </Text>
+                        <TouchableOpacity
+                            onPress={onPressAccount}
+                            style={styles.accountButton}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.accountButtonText}>
+                                {isLoggedIn ? 'Sign out (use as guest)' : 'Sign in / Register'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.section}>
@@ -219,5 +239,34 @@ const styles = StyleSheet.create({
         color: THEME.textMuted,
         fontSize: moderateScale(12),
         lineHeight: moderateScale(18),
+    },
+    accountSection: {
+        marginBottom: verticalScale(32),
+    },
+    accountCard: {
+        backgroundColor: THEME.surface,
+        borderRadius: moderateScale(20),
+        padding: scale(20),
+        borderWidth: 1,
+        borderColor: THEME.surfaceLight,
+        gap: verticalScale(8),
+    },
+    accountText: {
+        color: THEME.textMuted,
+        fontSize: moderateScale(12),
+        lineHeight: moderateScale(18),
+        marginBottom: verticalScale(8),
+    },
+    accountButton: {
+        alignSelf: 'flex-start',
+        backgroundColor: THEME.accent,
+        paddingHorizontal: scale(14),
+        paddingVertical: verticalScale(8),
+        borderRadius: moderateScale(999),
+    },
+    accountButtonText: {
+        color: THEME.text,
+        fontSize: moderateScale(12),
+        fontWeight: '600',
     },
 });

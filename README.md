@@ -32,5 +32,52 @@ The project is designed with modularity in mind, making it easy to add new scien
 - **Animations**: `react-native-reanimated` for 60fps flicker and transitions.
 - **Feedback**: `expo-haptics` for tactile engagement.
 
+## 🔐 Auth & Backend Setup
+
+- **Backend URL**
+  - For a **simulator** on the same machine as Laravel, you can use `http://127.0.0.1:8000`.
+  - For a **physical device** (Expo Go / standalone build), use your Mac's LAN IP, e.g. `http://192.168.0.27:8000`.
+  - On macOS you can get this with:
+
+```bash
+ipconfig getifaddr en0
+```
+
+- **Mobile app `.env`**
+  - Create or edit `.env` in the app root:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://192.168.0.27:8000
+```
+
+  - Expo inlines any `EXPO_PUBLIC_...` vars, so you must **restart Expo** after changing this (`npx expo start`).
+
+- **Laravel dev server**
+  - Run the API so it listens on all interfaces:
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+  - From your phone's browser you should be able to open `http://192.168.0.27:8000/api/register` and see a "GET not allowed, POST only" JSON/HTML page. That confirms connectivity.
+
+- **Daily workflow**
+  - **Step 1**: Start Laravel (`php artisan serve --host=0.0.0.0 --port=8000`).
+  - **Step 2**: Start Expo (`npx expo start` in this repo).
+  - **Step 3**: Open the app on your device (same Wi‑Fi as the backend).
+  - As long as your LAN IP does not change, no additional configuration is required.
+
+## ✅ Auth UX & Validation
+
+- **Guest mode**
+  - The app can be fully used as a guest; creating an account is optional.
+  - The Home screen's "Account" card lets you sign in / register or sign out back to guest mode.
+
+- **Client‑side validation before API calls**
+  - **Email**: basic format check (must look like `name@example.com`) is performed before hitting `register`, `login`, or `forgot-password`.
+  - **Register password**: must be **at least 12 characters** before the app will send a request.
+  - **Confirm password**: must match the password field or the request will not be sent.
+  - These checks avoid obviously invalid requests and mirror the Laravel validation rules; the backend remains the source of truth and may still return `422` for deeper validation.
+
 ---
 *Note: This app is intended for training and educational purposes, inspired by the neuropsychological research presented in Peak Mind.*

@@ -3,10 +3,12 @@ import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '@/screens/HomeScreen';
+import { AuthScreen } from '@/screens/AuthScreen';
 import { SartScreen } from '@/games/sart/screens/SartScreen';
 import { FlashCueScreen, FlashCueNoFlashScreen } from '@/games/flashcue/screens/FlashCueScreen';
 import { BreathScreen } from '@/games/breath/screens/BreathScreen';
 import { MeditationScreen } from '@/games/meditation/screens/MeditationScreen';
+import { useAuth } from '@/hooks/useAuth';
 import { RootStackParamList } from './types';
 import { navigationTheme } from './theme';
 
@@ -16,6 +18,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * Root navigation container with all app screens
  */
 export const RootNavigator: React.FC = () => {
+    const { isLoggedIn, user, logoutToGuest } = useAuth();
+
     return (
         <NavigationContainer theme={navigationTheme}>
             <Stack.Navigator
@@ -29,6 +33,15 @@ export const RootNavigator: React.FC = () => {
                 <Stack.Screen name="Home">
                     {({ navigation }) => (
                         <HomeScreen
+                            isLoggedIn={isLoggedIn}
+                            userEmail={user?.email ?? null}
+                            onPressAccount={() => {
+                                if (isLoggedIn) {
+                                    logoutToGuest();
+                                } else {
+                                    navigation.navigate('Auth');
+                                }
+                            }}
                             onSelectGame={(game) => {
                                 if (game === 'sart') {
                                     navigation.navigate('Sart');
@@ -44,6 +57,12 @@ export const RootNavigator: React.FC = () => {
                                 // Add future games here
                             }}
                         />
+                    )}
+                </Stack.Screen>
+
+                <Stack.Screen name="Auth">
+                    {({ navigation }) => (
+                        <AuthScreen onBack={() => navigation.goBack()} />
                     )}
                 </Stack.Screen>
 

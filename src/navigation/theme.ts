@@ -1,5 +1,6 @@
 // src/navigation/theme.ts
 import { Theme } from '@react-navigation/native';
+import { COLORS } from '@/theme/colors';
 
 /**
  * Navigation theme configuration matching the app's design system
@@ -7,11 +8,11 @@ import { Theme } from '@react-navigation/native';
 export const navigationTheme: Theme = {
     dark: true,
     colors: {
-        primary: '#0ea5e9',
-        background: '#020617',
-        card: '#0f172a',
-        text: '#f8fafc',
-        border: '#1e293b',
+        primary: COLORS.accent,
+        background: COLORS.bg,
+        card: COLORS.surface,
+        text: COLORS.text,
+        border: COLORS.surfaceLight,
         notification: '#f43f5e',
     },
     fonts: {
