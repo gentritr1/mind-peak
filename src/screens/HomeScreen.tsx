@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
-import { Brain, Info, Target, Zap, ChevronRight, Wind } from 'lucide-react-native';
+import { Brain, Info, Target, Zap, ChevronRight, Wind, Sparkles } from 'lucide-react-native';
 import { scale, verticalScale, moderateScale } from '../utils/responsive';
 
 const THEME = {
@@ -84,6 +84,13 @@ export const HomeScreen = ({ onSelectGame }: { onSelectGame: (game: string) => v
                         icon={<Wind size={24} color="#22c55e" />}
                         color="#22c55e"
                         onPress={() => onSelectGame('breath')}
+                    />
+                    <GameOption
+                        title="Meditation Timer"
+                        subtitle="Label your distractions"
+                        icon={<Sparkles size={24} color="#6366f1" />}
+                        color="#6366f1"
+                        onPress={() => onSelectGame('meditation')}
                     />
                 </View>
 

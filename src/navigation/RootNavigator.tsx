@@ -6,6 +6,7 @@ import { HomeScreen } from '@/screens/HomeScreen';
 import { SartScreen } from '@/games/sart/screens/SartScreen';
 import { FlashCueScreen, FlashCueNoFlashScreen } from '@/games/flashcue/screens/FlashCueScreen';
 import { BreathScreen } from '@/games/breath/screens/BreathScreen';
+import { MeditationScreen } from '@/games/meditation/screens/MeditationScreen';
 import { RootStackParamList } from './types';
 import { navigationTheme } from './theme';
 
@@ -37,6 +38,8 @@ export const RootNavigator: React.FC = () => {
                                     navigation.navigate('FlashCueNoFlash');
                                 } else if (game === 'breath') {
                                     navigation.navigate('Breath');
+                                } else if (game === 'meditation') {
+                                    navigation.navigate('Meditation');
                                 }
                                 // Add future games here
                             }}
@@ -65,6 +68,12 @@ export const RootNavigator: React.FC = () => {
                 <Stack.Screen name="Breath">
                     {({ navigation }) => (
                         <BreathScreen onBack={() => navigation.goBack()} />
+                    )}
+                </Stack.Screen>
+
+                <Stack.Screen name="Meditation">
+                    {({ navigation }) => (
+                        <MeditationScreen onBack={() => navigation.goBack()} />
                     )}
                 </Stack.Screen>
 

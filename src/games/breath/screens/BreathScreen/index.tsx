@@ -1,7 +1,14 @@
 // src/games/breath/screens/BreathScreen/index.tsx
 import * as React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Pressable } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+    FadeIn,
+    FadeInDown,
+    FadeInUp,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+} from 'react-native-reanimated';
 import { ArrowLeft, Wind } from 'lucide-react-native';
 import { moderateScale } from '@/utils/responsive';
 import { useBreathLogic } from '@/games/breath/hooks/useBreathLogic';
@@ -55,33 +62,46 @@ export const BreathScreen: React.FC<BreathScreenProps> = ({ onBack }) => {
     if (gameState === 'idle') {
         return (
             <View style={styles.container}>
-                <View style={styles.headerWrapper}>
+                <Animated.View entering={FadeIn.delay(80).duration(300)} style={styles.headerWrapper}>
                     <TouchableOpacity onPress={onBack} style={styles.backButton}>
                         <ArrowLeft size={moderateScale(18)} color={THEME.textMuted} />
                         <Text style={styles.backButtonText}>Back</Text>
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
                 <ScrollView contentContainerStyle={styles.idleContent} showsVerticalScrollIndicator={false}>
-                    <Text style={styles.title}>4–6 Breath</Text>
-                    <Text style={styles.subtitle}>4 seconds in, 6 seconds out</Text>
+                    <Animated.View
+                        entering={FadeInDown.delay(140).duration(400).springify()}
+                    >
+                        <Text style={styles.title}>4–6 Breath</Text>
+                        <Text style={styles.subtitle}>4 seconds in, 6 seconds out</Text>
+                    </Animated.View>
 
-                    <View style={styles.card}>
+                    <Animated.View
+                        entering={FadeInDown.delay(220).duration(400).springify()}
+                        style={styles.card}
+                    >
                         <Text style={styles.cardTitle}>How it works</Text>
                         <Text style={styles.cardText}>
                             Breathe in through your nose for 4 seconds, then breathe out gently through your
                             mouth for 6 seconds. Follow the expanding and contracting circle to stay on rhythm.
                         </Text>
-                    </View>
+                    </Animated.View>
 
-                    <View style={styles.card}>
+                    <Animated.View
+                        entering={FadeInDown.delay(280).duration(400).springify()}
+                        style={styles.card}
+                    >
                         <Text style={styles.cardTitle}>Your part</Text>
                         <Text style={styles.cardText}>
                             Press and hold the bar while you inhale, then release and press again while you exhale.
                             We&apos;ll let you know when your breath is matching the 4–6 timing.
                         </Text>
-                    </View>
+                    </Animated.View>
 
-                    <View style={styles.difficultyRow}>
+                    <Animated.View
+                        entering={FadeInDown.delay(340).duration(400).springify()}
+                        style={styles.difficultyRow}
+                    >
                         <TouchableOpacity
                             activeOpacity={0.8}
                             style={[
@@ -115,11 +135,15 @@ export const BreathScreen: React.FC<BreathScreenProps> = ({ onBack }) => {
                             <Text style={styles.difficultyChipLabel}>Deep</Text>
                             <Text style={styles.difficultyChipSub}>12 cycles</Text>
                         </TouchableOpacity>
-                    </View>
+                    </Animated.View>
 
-                    <AnimatedTouchable style={styles.startButton} onPress={startGame} activeOpacity={0.8}>
-                        <Text style={styles.startButtonText}>Begin Breathing</Text>
-                    </AnimatedTouchable>
+                    <Animated.View
+                        entering={FadeInUp.delay(420).duration(400).springify()}
+                    >
+                        <AnimatedTouchable style={styles.startButton} onPress={startGame} activeOpacity={0.8}>
+                            <Text style={styles.startButtonText}>Begin Breathing</Text>
+                        </AnimatedTouchable>
+                    </Animated.View>
                 </ScrollView>
             </View>
         );

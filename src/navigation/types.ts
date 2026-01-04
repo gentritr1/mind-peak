@@ -9,6 +9,7 @@ export type RootStackParamList = {
     FlashCue: undefined;
     FlashCueNoFlash: undefined;
     Breath: undefined;
+     Meditation: undefined;
     // Add future game screens here:
     // Stroop: undefined;
     // Flanker: undefined;
