@@ -6,12 +6,12 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-    SafeAreaView,
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { scale, verticalScale, moderateScale } from '@/utils/responsive';
 import { useAuth } from '@/hooks/useAuth';

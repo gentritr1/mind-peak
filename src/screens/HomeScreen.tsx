@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brain, Info, Target, Zap, ChevronRight, Wind, Sparkles } from 'lucide-react-native';
 import { scale, verticalScale, moderateScale } from '../utils/responsive';
 import { COLORS } from '@/theme/colors';

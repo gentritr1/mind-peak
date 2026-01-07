@@ -1,6 +1,7 @@
 // src/games/meditation/screens/MeditationScreen/index.tsx
 import * as React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import Animated, {
     FadeIn,
     FadeInDown,
@@ -12,17 +13,6 @@ import Animated, {
 import { ArrowLeft, Sparkles, PauseCircle, PlayCircle } from 'lucide-react-native';
 import { moderateScale } from '@/utils/responsive';
 import { DistractionCategory, MEDITATION_CONFIG, THEME } from '@/games/meditation/constants';
-// Audio playback for meditation background optionally uses expo-av.
-// To enable audio, install expo-av in your app:
-//   npx expo install expo-av
-// This file lazily requires it to avoid hard build-time dependency.
-let AudioModule: any | null = null;
-try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    AudioModule = require('expo-av');
-} catch {
-    AudioModule = null;
-}
 
 import { MEDITATION_TRACKS, MeditationTrack } from '@/../assets/songs';
 import { useMeditationTimer } from '@/games/meditation/hooks/useMeditationTimer';
@@ -125,6 +115,29 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
         )
         : presetMinutes;
 
+    const handleCustomMinutesChange = (value: string) => {
+        if (!value) {
+            setCustomMinutes('');
+            return;
+        }
+
+        // Strip non-digits just in case and clamp to max minutes
+        const numericString = value.replace(/[^0-9]/g, '');
+        if (!numericString) {
+            setCustomMinutes('');
+            return;
+        }
+
+        const parsed = parseInt(numericString, 10);
+        if (Number.isNaN(parsed)) {
+            setCustomMinutes('');
+            return;
+        }
+
+        const clamped = Math.min(MEDITATION_CONFIG.MAX_DURATION_MINUTES, parsed);
+        setCustomMinutes(String(clamped));
+    };
+
     const handleStart = () => {
         const durationMs = effectiveMinutes * 60_000;
         start(durationMs);
@@ -168,23 +181,20 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
             console.log('[MeditationAudio] No playable track selected (id:', selectedTrackId, ')');
             return;
         }
-        if (!AudioModule) {
-            console.log('[MeditationAudio] expo-av is not installed. Run `npx expo install expo-av` to enable audio.');
-            return;
-        }
         try {
             console.log('[MeditationAudio] Starting track:', track.id);
-            await AudioModule.Audio.setAudioModeAsync({
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                shouldDuckAndroid: true,
+            await setAudioModeAsync({
+                playsInSilentMode: true,
+                shouldPlayInBackground: false,
+                interruptionMode: 'mixWithOthers',
             });
-            const { sound } = await AudioModule.Audio.Sound.createAsync(track.source, {
-                isLooping: true,
-                volume: 0.5,
-            });
-            soundRef.current = sound;
-            await sound.playAsync();
+
+            const player = createAudioPlayer(track.source);
+            player.loop = true;
+            player.volume = 0.5;
+
+            soundRef.current = player;
+            player.play();
             console.log('[MeditationAudio] Track is playing.');
         } catch (e) {
             console.log('[MeditationAudio] Failed to start audio:', e);
@@ -194,8 +204,8 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
     const stopAudio = async () => {
         if (!soundRef.current) return;
         try {
-            await soundRef.current.stopAsync();
-            await soundRef.current.unloadAsync();
+            soundRef.current.pause?.();
+            soundRef.current.remove?.();
         } catch {
             // ignore
         } finally {
@@ -296,14 +306,20 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
                         </View>
 
                         <View style={styles.customInputRow}>
-                            <Text style={styles.customLabel}>Or custom minutes</Text>
+                            <View>
+                                <Text style={styles.customLabel}>Or custom minutes</Text>
+                                <Text style={styles.customLabel}>
+                                    (Min {MEDITATION_CONFIG.MIN_DURATION_MINUTES}, max {MEDITATION_CONFIG.MAX_DURATION_MINUTES})
+                                </Text>
+                            </View>
                             <TextInput
                                 style={styles.customInput}
                                 keyboardType="number-pad"
                                 placeholder={`${presetMinutes}`}
                                 placeholderTextColor={THEME.textMuted}
                                 value={customMinutes}
-                                onChangeText={setCustomMinutes}
+                                onChangeText={handleCustomMinutesChange}
+                                maxLength={2}
                             />
                         </View>
 
