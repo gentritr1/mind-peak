@@ -202,8 +202,10 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
                 shouldPlayInBackground: false,
                 interruptionMode: 'mixWithOthers',
             });
-
             const player = createAudioPlayer(track.source);
+            // Tag the player so we can detect when the selected track changes
+            // without having to keep a separate structure in state.
+            (player as any)._peakTrackId = track.id;
             player.loop = true;
             player.volume = 0.5;
 
@@ -227,18 +229,57 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
         }
     };
 
+    /**
+     * Manage the lifetime of the audio player instance.
+     *
+     * We want:
+     * - A player to exist whenever the session is active (running or paused),
+     *   music is enabled, and a non‑silence track is chosen.
+     * - To **not** tear down the player when the timer is merely paused
+     *   (e.g. when adding a distraction note), so that resuming is instant.
+     */
     React.useEffect(() => {
-        if (state === 'running' && isMusicOn && selectedTrackId !== 'silence') {
-            // start or restart audio when session begins / track or toggle changes
-            void stopAudio().then(() => startAudioForTrack());
-        } else if (state !== 'running' || !isMusicOn || selectedTrackId === 'silence') {
+        const shouldHaveAudioInstance =
+            (state === 'running' || state === 'paused') &&
+            isMusicOn &&
+            selectedTrackId !== 'silence';
+
+        if (!shouldHaveAudioInstance) {
+            // Session not active, user turned music off, or chose silence:
+            // fully stop and unload the audio.
             void stopAudio();
+            return;
         }
+
+        const maybeStartOrSwitchTrack = async () => {
+            const current = soundRef.current as any | null;
+
+            // If there's no player yet, or the selected track changed,
+            // create a fresh player for the new track.
+            if (!current || current._peakTrackId !== selectedTrackId) {
+                await stopAudio();
+                await startAudioForTrack();
+            }
+
+            // If we're paused, make sure the audio is paused but still loaded.
+            const fresh = soundRef.current as any | null;
+            if (!fresh) return;
+            if (state === 'paused') {
+                fresh.pause?.();
+            } else if (state === 'running') {
+                fresh.play?.();
+            }
+        };
+
+        void maybeStartOrSwitchTrack();
+    }, [state, isMusicOn, selectedTrackId]);
+
+    // Ensure cleanup on unmount
+    React.useEffect(() => {
         return () => {
-            // ensure cleanup on unmount
             void stopAudio();
         };
-    }, [state, isMusicOn, selectedTrackId]);
+    }, []);
 
     const toggleMusic = () => {
         setIsMusicOn((prev) => !prev);
