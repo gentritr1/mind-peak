@@ -1,6 +1,7 @@
 // src/games/meditation/screens/MeditationScreen/index.tsx
 import * as React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import Animated, {
     FadeIn,
@@ -16,6 +17,7 @@ import { DistractionCategory, MEDITATION_CONFIG, THEME } from '@/games/meditatio
 
 import { MEDITATION_TRACKS, MeditationTrack } from '@/../assets/songs';
 import { useMeditationTimer } from '@/games/meditation/hooks/useMeditationTimer';
+import { apiCreateMeditationSession } from '@/services/sessions/meditation';
 import { styles } from './styles';
 
 interface MeditationScreenProps {
@@ -50,6 +52,9 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
     const sheenTranslate = useSharedValue(-40);
     const pulseIndexRef = React.useRef(0);
     const soundRef = React.useRef<any | null>(null);
+    const sessionStartedAtRef = React.useRef<Date | null>(null);
+    const hasUploadedRef = React.useRef(false);
+    const navigation = useNavigation();
 
     React.useEffect(() => {
         const animateOnce = () => {
@@ -139,7 +144,16 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
     };
 
     const handleStart = () => {
+        const now = new Date();
+        sessionStartedAtRef.current = now;
+        hasUploadedRef.current = false;
         const durationMs = effectiveMinutes * 60_000;
+        // eslint-disable-next-line no-console
+        console.log('[MeditationSession] Start pressed', {
+            effectiveMinutes,
+            durationMs,
+            startedAt: now.toISOString(),
+        });
         start(durationMs);
     };
 
@@ -232,11 +246,121 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
 
     const currentTrack = MEDITATION_TRACKS.find((t: MeditationTrack) => t.id === selectedTrackId);
 
+    const isTimerPaused = state === 'paused';
+
+    const uploadSession = (endedVia: 'finished' | 'back') => {
+        if (hasUploadedRef.current) return;
+
+        const startedAt =
+            sessionStartedAtRef.current ??
+            new Date(Date.now() - (elapsedMs || totalMs));
+        const endedAt = new Date();
+
+        const targetMs = targetDurationMs || totalMs;
+        const completedMs = elapsedMs || totalMs;
+
+        const emotionCount = events.filter((e) => e.category === 'emotion').length;
+        const sensationCount = events.filter((e) => e.category === 'sensation').length;
+        const thoughtCount = events.filter((e) => e.category === 'thought').length;
+
+        const eventPayload = events.map((e) => ({
+            category: e.category,
+            timestamp_ms: e.timestampMs,
+            note: e.note,
+        }));
+
+        hasUploadedRef.current = true;
+
+        void (async () => {
+            try {
+                // eslint-disable-next-line no-console
+                console.log('[MeditationSession] Uploading payload', {
+                    endedVia,
+                    startedAt,
+                    endedAt,
+                    targetMs,
+                    completedMs,
+                    emotionCount,
+                    sensationCount,
+                    thoughtCount,
+                    eventsCount: eventPayload?.length ?? 0,
+                });
+
+                const result = await apiCreateMeditationSession({
+                    activity_type: 'meditation_timer',
+                    started_at: startedAt.toISOString(),
+                    ended_at: endedAt.toISOString(),
+                    duration_ms: endedAt.getTime() - startedAt.getTime(),
+                    client_version: '1.0.0',
+                    device_info: { platform: Platform.OS },
+                    meta: { screen: 'MeditationTimer', ended_via: endedVia },
+                    summary: {
+                        target_duration_ms: targetMs,
+                        completed_duration_ms: completedMs,
+                        emotion_count: emotionCount,
+                        sensation_count: sensationCount,
+                        thought_count: thoughtCount,
+                    },
+                    events: eventPayload,
+                });
+
+                if (result.error) {
+                    // eslint-disable-next-line no-console
+                    console.log('[MeditationSession] Upload failed', result.error);
+                } else {
+                    // eslint-disable-next-line no-console
+                    console.log('[MeditationSession] Uploaded session successfully');
+                }
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.log('[MeditationSession] Unexpected upload error', e);
+            }
+        })();
+    };
+
+    const handleBackPress = () => {
+        // Always attempt to upload when leaving screen
+        // eslint-disable-next-line no-console
+        console.log('[MeditationSession] Back pressed', { state, elapsedMs, totalMs });
+
+        uploadSession('back');
+        onBack();
+    };
+
+    // Upload completed meditation session once per run when timer reaches target
+    React.useEffect(() => {
+        // eslint-disable-next-line no-console
+        console.log('[MeditationSession] State/effects', {
+            state,
+            elapsedMs,
+            totalMs,
+            targetDurationMs,
+        });
+        if (state === 'finished') {
+            uploadSession('finished');
+        }
+    }, [state, elapsedMs, totalMs, targetDurationMs, events]);
+
+    // Also hook into navigation leaving events (hardware back, gestures, etc.)
+    React.useEffect(() => {
+        const unsubscribe = navigation.addListener('beforeRemove', () => {
+            // eslint-disable-next-line no-console
+            console.log('[MeditationSession] beforeRemove navigation event', {
+                state,
+                elapsedMs,
+                totalMs,
+                hasUploaded: hasUploadedRef.current,
+            });
+            uploadSession('back');
+        });
+        return unsubscribe;
+    }, [navigation, state, elapsedMs, totalMs, targetDurationMs, events]);
+
     if (state === 'idle') {
         return (
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(80).duration(300)} style={styles.headerWrapper}>
-                    <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
                         <ArrowLeft size={moderateScale(18)} color={THEME.textMuted} />
                         <Text style={styles.backButtonText}>Back</Text>
                     </TouchableOpacity>
@@ -374,7 +498,7 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
         return (
             <View style={styles.container}>
                 <View style={styles.headerWrapper}>
-                    <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
                         <ArrowLeft size={moderateScale(18)} color={THEME.textMuted} />
                         <Text style={styles.backButtonText}>Back</Text>
                     </TouchableOpacity>
@@ -408,7 +532,7 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
                         <TouchableOpacity
                             style={styles.finishedButtonSecondary}
                             activeOpacity={0.8}
-                            onPress={onBack}
+                            onPress={handleBackPress}
                         >
                             <Text style={styles.finishedButtonTextSecondary}>Back to Home</Text>
                         </TouchableOpacity>
@@ -441,6 +565,29 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
                     <Text style={styles.timerText}>{timerText}</Text>
                 </View>
 
+                <View style={styles.timerControlsRow}>
+                    <TouchableOpacity
+                        style={styles.timerControlButton}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            if (state === 'running') {
+                                pause();
+                            } else if (state === 'paused') {
+                                resume();
+                            }
+                        }}
+                    >
+                        {isTimerPaused ? (
+                            <PlayCircle size={moderateScale(16)} color={THEME.accent} />
+                        ) : (
+                            <PauseCircle size={moderateScale(16)} color={THEME.accent} />
+                        )}
+                        <Text style={styles.timerControlText}>
+                            {isTimerPaused ? 'Resume session' : 'Pause session'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
                 <View style={styles.orbWrapper}>
                     <Animated.View style={[styles.orbOuter, orbStyle]}>
                         <Animated.View style={[styles.orbGlow, glowStyle]} />
@@ -452,29 +599,29 @@ export const MeditationScreen: React.FC<MeditationScreenProps> = ({ onBack }) =>
                     <Text style={styles.orbHint}>
                         Let the breath be natural. Each time you&apos;re pulled away, notice it and gently label it.
                     </Text>
-                    <View style={styles.musicRow}>
-                        <TouchableOpacity
-                            style={styles.musicButton}
-                            activeOpacity={0.8}
-                            onPress={toggleMusic}
-                        >
-                            {isMusicOn && currentTrack && currentTrack.id !== 'silence' ? (
-                                <PauseCircle size={moderateScale(18)} color={THEME.accent} />
-                            ) : (
-                                <PlayCircle size={moderateScale(18)} color={THEME.accent} />
-                            )}
-                            <View>
-                                <Text style={styles.musicButtonText}>
-                                    {isMusicOn && currentTrack && currentTrack.id !== 'silence'
-                                        ? 'Pause music'
-                                        : 'Play music'}
-                                </Text>
-                                <Text style={styles.musicButtonSub}>
-                                    {currentTrack?.label ?? 'Silence'}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
+                    {currentTrack && currentTrack.id !== 'silence' && (
+                        <View style={styles.musicRow}>
+                            <TouchableOpacity
+                                style={styles.musicButton}
+                                activeOpacity={0.8}
+                                onPress={toggleMusic}
+                            >
+                                {isMusicOn ? (
+                                    <PauseCircle size={moderateScale(18)} color={THEME.accent} />
+                                ) : (
+                                    <PlayCircle size={moderateScale(18)} color={THEME.accent} />
+                                )}
+                                <View>
+                                    <Text style={styles.musicButtonText}>
+                                        {isMusicOn ? 'Pause music' : 'Play music'}
+                                    </Text>
+                                    <Text style={styles.musicButtonSub}>
+                                        {currentTrack.label}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
 
                 <View>

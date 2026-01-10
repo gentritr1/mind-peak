@@ -4,8 +4,8 @@
 // This does not yet handle tokens – it just stores the returned user.
 
 import * as React from 'react';
-import type { User } from '@/utils/api';
-import { apiLogin, apiRegister } from '@/utils/api';
+import type { User } from '@/services/auth';
+import { apiLogin, apiRegister } from '@/services/auth';
 
 type AuthMode = 'guest' | 'account';
 

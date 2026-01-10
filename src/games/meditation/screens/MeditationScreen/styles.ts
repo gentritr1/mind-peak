@@ -147,6 +147,26 @@ export const styles = StyleSheet.create({
         fontWeight: '800',
         letterSpacing: 2,
     },
+    timerControlsRow: {
+        marginTop: verticalScale(10),
+        alignItems: 'center',
+    },
+    timerControlButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: scale(6),
+        paddingHorizontal: scale(14),
+        paddingVertical: verticalScale(6),
+        borderRadius: moderateScale(999),
+        borderWidth: 1,
+        borderColor: '#1e293b',
+        backgroundColor: '#020617',
+    },
+    timerControlText: {
+        color: THEME.text,
+        fontSize: moderateScale(12),
+        fontWeight: '600',
+    },
     orbWrapper: {
         marginTop: verticalScale(24),
         alignItems: 'center',

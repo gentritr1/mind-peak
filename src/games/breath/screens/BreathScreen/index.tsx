@@ -1,6 +1,6 @@
 // src/games/breath/screens/BreathScreen/index.tsx
 import * as React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Pressable, Platform } from 'react-native';
 import Animated, {
     FadeIn,
     FadeInDown,
@@ -13,7 +13,8 @@ import { ArrowLeft, Wind } from 'lucide-react-native';
 import { moderateScale } from '@/utils/responsive';
 import { useBreathLogic } from '@/games/breath/hooks/useBreathLogic';
 import { styles } from './styles';
-import { THEME } from '@/games/breath/constants';
+import { BREATH_CONFIG, THEME } from '@/games/breath/constants';
+import { apiCreateBreathSession } from '@/services/sessions/breath';
 
 interface BreathScreenProps {
     onBack: () => void;
@@ -41,6 +42,8 @@ export const BreathScreen: React.FC<BreathScreenProps> = ({ onBack }) => {
 
     const circleScale = useSharedValue(1);
     const barProgress = useSharedValue(0);
+    const sessionStartedAtRef = React.useRef<Date | null>(null);
+    const hasUploadedRef = React.useRef(false);
 
     React.useEffect(() => {
         const target = targetDurationForPhase(phase);
@@ -58,6 +61,88 @@ export const BreathScreen: React.FC<BreathScreenProps> = ({ onBack }) => {
     const barFillStyle = useAnimatedStyle(() => ({
         width: `${barProgress.value * 100}%`,
     }));
+
+    React.useEffect(() => {
+        if (gameState !== 'finished' || hasUploadedRef.current) {
+            return;
+        }
+
+        hasUploadedRef.current = true;
+
+        const startedAt =
+            sessionStartedAtRef.current ??
+            new Date();
+        const endedAt = new Date();
+
+        const totalPhases = results.length;
+        const exhaledPhases = results.filter((r) => r.phase === 'exhale').length;
+        const onRhythmCount = results.filter((r) => r.isOnRhythm).length;
+        const avgDelta =
+            totalPhases > 0
+                ? Math.round(
+                      results.reduce((sum, r) => sum + Math.abs(r.delta), 0) / totalPhases,
+                  )
+                : 0;
+
+        const cyclesCompleted = Math.min(cycleCount, exhaledPhases);
+
+        const phasesPayload =
+            results.length > 0
+                ? results.map((r, index) => ({
+                      index,
+                      phase: r.phase,
+                      target_duration_ms: r.targetDuration,
+                      actual_duration_ms: r.actualDuration,
+                      delta_ms: r.delta,
+                      is_on_rhythm: r.isOnRhythm,
+                  }))
+                : undefined;
+
+        void (async () => {
+            try {
+                if (__DEV__) {
+                    // eslint-disable-next-line no-console
+                    console.log('[BreathSession] Uploading payload', {
+                        startedAt,
+                        endedAt,
+                        totalPhases,
+                        cyclesCompleted,
+                        onRhythmCount,
+                        avgDelta,
+                        phasesCount: phasesPayload?.length ?? 0,
+                    });
+                }
+
+                const result = await apiCreateBreathSession({
+                    activity_type: 'breath_4_6',
+                    started_at: startedAt.toISOString(),
+                    ended_at: endedAt.toISOString(),
+                    duration_ms: endedAt.getTime() - startedAt.getTime(),
+                    client_version: '1.0.0',
+                    device_info: { platform: Platform.OS },
+                    meta: { screen: 'Breath4_6' },
+                    summary: {
+                        inhale_ms: BREATH_CONFIG.INHALE_DURATION_MS,
+                        exhale_ms: BREATH_CONFIG.EXHALE_DURATION_MS,
+                        target_cycles: cycleCount,
+                        completed_cycles: cyclesCompleted,
+                        on_rhythm_phases: onRhythmCount,
+                        total_phases: totalPhases,
+                        avg_offset_ms: avgDelta,
+                    },
+                    phases: phasesPayload,
+                });
+
+                if (result.error) {
+                    console.log('[BreathSession] Upload failed', result.error);
+                } else {
+                    console.log('[BreathSession] Uploaded session successfully');
+                }
+            } catch (e) {
+                console.log('[BreathSession] Unexpected upload error', e);
+            }
+        })();
+    }, [gameState, results, cycleCount]);
 
     if (gameState === 'idle') {
         return (
@@ -140,7 +225,15 @@ export const BreathScreen: React.FC<BreathScreenProps> = ({ onBack }) => {
                     <Animated.View
                         entering={FadeInUp.delay(420).duration(400).springify()}
                     >
-                        <AnimatedTouchable style={styles.startButton} onPress={startGame} activeOpacity={0.8}>
+                        <AnimatedTouchable
+                            style={styles.startButton}
+                            onPress={() => {
+                                sessionStartedAtRef.current = new Date();
+                                hasUploadedRef.current = false;
+                                startGame();
+                            }}
+                            activeOpacity={0.8}
+                        >
                             <Text style={styles.startButtonText}>Begin Breathing</Text>
                         </AnimatedTouchable>
                     </Animated.View>

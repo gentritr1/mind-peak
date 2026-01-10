@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { scale, verticalScale, moderateScale } from '@/utils/responsive';
 import { useAuth } from '@/hooks/useAuth';
-import { apiForgotPassword } from '@/utils/api';
+import { apiForgotPassword } from '@/services/auth';
 import { COLORS } from '@/theme/colors';
 
 const THEME = COLORS;

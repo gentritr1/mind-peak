@@ -80,6 +80,44 @@ async function request<TResponse>(
     };
 }
 
+// -------- Sessions (activity logging) --------
+
+export type ActivityType =
+    | 'sart'
+    | 'flash_cue'
+    | 'flash_cue_noflash'
+    | 'breath_4_6'
+    | 'meditation_timer';
+
+export interface SessionEventPayload {
+    category: string;
+    timestamp_ms: number;
+    note?: string;
+}
+
+export interface SessionPayload {
+    activity_type: ActivityType;
+    started_at: string;
+    ended_at: string;
+    duration_ms: number;
+    client_version?: string;
+    device_info?: unknown;
+    meta?: unknown;
+    summary: unknown;
+    trials?: unknown[];
+    phases?: unknown[];
+    events?: SessionEventPayload[];
+}
+
+export async function apiCreateSession(
+    input: SessionPayload,
+): Promise<ApiResult<unknown>> {
+    return request<unknown>('sessions', {
+        method: 'POST',
+        body: input,
+    });
+}
+
 // -------- Auth endpoints --------
 
 interface AuthSuccessPayload {
